@@ -7,11 +7,10 @@
 		<link rel="stylesheet" href="style.css" />
 		<script src="http://html5man.com/jslibs/puredom.js"></script>
 		<script type="text/Javascript" src="metronome.js"></script>
+		<script type="text/Javascript" src="touchslide-puredom.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	</head>
 	<body>
-		<div id="header">
-			<h1>Metronome!</h1>
-		</div>
 		<div id="content">
 			<div class="metronome">
 				<div class="controls">
@@ -34,6 +33,7 @@
 		metronome = {};
 		puredom(function(){
 			var flash_length = 100;
+			var start_bpm;
 			var sfx = {
 				down_beat: new Audio(),
 				up_beat: new Audio()
@@ -46,29 +46,44 @@
 			
 			// Input handlers
 			puredom('.meter').addEvent('click', function(){metronome.toggle()});
-			
-			var drag = null;
-			var drag_from = null;
-			puredom('.bpm-display').on('mousedown', function(e){
-				drag = e;
-				drag_from = metronome.bpm;
-				return e.cancel();
-			});
-			puredom(window).on('mouseup', function(){
-				drag = null;
-			}).on('mousemove', function(e){
-				if (!drag) {
-					return;
-				}
-				
-				var delta = e.pageX - drag.pageX;
-				var delta_bpm = drag_from + delta;
-				metronome.set_bpm(Math.round(delta_bpm / 1.5));
-			});
-			
-			puredom('.bpm-increment').addEvent('click', function(){metronome.increment()});
-			puredom('.bpm-decrement').addEvent('click', function(){metronome.decrement()});
 			puredom('.beat').on('click', function() {metronome.toggle();});
+			
+			//
+			// BPM Changers
+			//
+			
+			// touch sliding
+			puredom('.bpm-display').touchslide(0.85, 10)
+			    .on('slidestart', function(e) { 
+			        start_bpm = metronome.bpm;
+			        puredom(this).classify('changing');
+			    })
+			    .on('sliding', function(e) {
+			        metronome.set_bpm(Math.round(start_bpm + e.sourceOffsetX));
+			    })
+			    .on('slidestop', function(e) {
+			        puredom(this).declassify('changing');
+		        });
+			
+			// buttons
+			puredom('.bpm-increment').addEvent('click', function(e){
+			    metronome.increment()
+			    puredom('.bpm-display')
+			        .classify('changing')
+                    .wait(200, function(){puredom('.bpm-display').declassify('changing')});
+                
+                return e.cancel();
+		    });
+			puredom('.bpm-decrement').addEvent('click', function(e){
+			    metronome.decrement()
+			    puredom('.bpm-display')
+			        .classify('changing')
+                    .wait(200, function(){puredom('.bpm-display').declassify('changing')});
+                
+                return e.cancel();
+            });
+            
+            // keyboard arrows
 			puredom(document).on('keyDown', function(e){
 				var amount = 1;
 				if (e.shiftKey) {
@@ -84,6 +99,7 @@
 				}
 			});
 			
+			// scrolling
 			puredom('.controls').on('mousewheel', function(e) {
 				var amount = 1;
 				if (e.shiftKey) {
@@ -99,16 +115,22 @@
 				}
 			});
 			
+			//
 			// Event handlers
+			//
+			
+			// counting reset
 			metronome.on('reset', function() {
 				puredom('.beat, .beat-counter').declassify('light flash');
 			});
 			
+			// BPM increase/decrease
 			metronome.on('bpmChange', function(bpm) {
 				puredom('.bpm-display').text(bpm);
 				flash_length = Math.min(100, (60 / bpm * 1000) * .25);
 			});
 			
+			// time signature change
 			metronome.on('meterChange', function(beats_per_measure) {
 				
 				var counters = puredom('.beat-counters');
@@ -136,17 +158,6 @@
 					'margin-right': '0px'
 				})
 			});
-			
-			/*
-			metronome.on('halfBeat', function(half_beats) {
-				puredom('.beat')
-					.classify('light')
-					.classify('flash')
-					.wait(flash_length * .5, function() {
-						this.declassify('flash');
-					});
-			});
-			*/
 			
 			metronome.on('fullBeat', function(beats, beat, measure){
 				puredom('.beat-' + beat)

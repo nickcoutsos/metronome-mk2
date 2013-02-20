@@ -120,6 +120,11 @@ body {
 	
 	font-size: 72px;
 }
+
+.bpm-display.changing {
+    color: #476685;
+}
+
 .bpm-display:before {
 	content: "♩=";
 	font-size: 36px;
