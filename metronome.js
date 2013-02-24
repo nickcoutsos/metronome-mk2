@@ -37,7 +37,7 @@ puredom.extend(Metronome.prototype, {
         }
         
         this.beats_per_measure = beats_per_measure;
-        this._fireEvent('meterChange', [this.beats_per_measure]);
+        this.fireEvent('meterChange', [this.beats_per_measure]);
         this.reset();
     },
     
@@ -53,7 +53,7 @@ puredom.extend(Metronome.prototype, {
         }
         this.bpm = bpm;
         
-        this._fireEvent('bpmChange', [this.bpm]);
+        this.fireEvent('bpmChange', [this.bpm]);
         if (this.running()) {
             this.reset();
         }
@@ -66,7 +66,7 @@ puredom.extend(Metronome.prototype, {
     _beat: function() {
         this._half_beats++;
         
-        this._fireEvent('halfBeat', [this._half_beats % 2 != 0]);
+        this.fireEvent('halfBeat', [this._half_beats % 2 != 0]);
         
         if (this._half_beats % 2 == 0) {
             this._beats++;
@@ -74,7 +74,7 @@ puredom.extend(Metronome.prototype, {
                 this._measures++;
                 
                 if (this._measures != 1) {
-                    var result = this._fireEvent('measure', this._measures);
+                    var result = this.fireEvent('measure', this._measures);
                     if (!result.truthy) {
                         return;
                     }
@@ -85,7 +85,7 @@ puredom.extend(Metronome.prototype, {
                 b = this.beats_per_measure,
                 c = a % b || b;
             
-            this._fireEvent('fullBeat', [a, c, this._measures]);
+            this.fireEvent('fullBeat', [a, c, this._measures]);
         }
     },
     
@@ -103,14 +103,14 @@ puredom.extend(Metronome.prototype, {
         this._measures = 0;
         var that = this;
         this._interval = setInterval(function(){that._beat();}, this.seconds_per_beat() * 500);
-        this._fireEvent('start');
+        this.fireEvent('start');
     },
     
     stop: function() {
         if (this.running()) {
             clearInterval(this._interval);
             this._interval = null;
-            this._fireEvent('stop');
+            this.fireEvent('stop');
         }
     },
     
