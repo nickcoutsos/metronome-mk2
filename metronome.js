@@ -4,7 +4,7 @@ Metronome = function(){
     this.beats_per_measure = 4;
     
     this.MIN_BEATS_PER_MINUTE = 1;
-    this.MAX_BEATS_PER_MINUTE = 300;
+    this.MAX_BEATS_PER_MINUTE = 400;
 };
 
 puredom.inherits(Metronome, puredom.EventEmitter);
@@ -46,6 +46,9 @@ puredom.extend(Metronome.prototype, {
         bpm = Math.min(this.MAX_BEATS_PER_MINUTE, bpm);
         
         if (this.bpm == bpm) {
+            if (this.running()) {
+                this.reset();
+            }
             return;
         }
         this.bpm = bpm;
@@ -121,11 +124,5 @@ puredom.extend(Metronome.prototype, {
             self._beat();
             self = null;
         },1);
-        
-        //this._beat();
-        //this._half_beats = 1;
-        //this._beats = 1;
-        //this._measures = 0;
-        //this._fireEvent('reset');
     }
 });

@@ -119,9 +119,11 @@
 			// Event handlers
 			//
 			
-			// counting reset
-			metronome.on('reset', function() {
-				puredom('.beat, .beat-counter').declassify('light flash');
+			// start
+			metronome.on('start', function() {
+				puredom('.beat, .beat-counter')
+					.declassify('light')
+					.declassify('flash');
 			});
 			
 			// BPM increase/decrease
@@ -178,17 +180,16 @@
 			
 			metronome.on('measure', function(measure) {
 				puredom('.beat-counter').declassify('light');
-				console.log('measure', measure);
 				if ((measure - 1) % 2 == 0) {
-					return metronome.increment(10);
+					metronome.increment(10);
+					return false;
 				}
 			});
 			
 			metronome.init();
-			metronome.set_bpm(70);
+			metronome.set_bpm(80);
 			metronome.set_meter(4);
 			metronome._fireEvent('meterChange', 4);
-			//set_content_size();
 		});
 	</script>
 </html>
