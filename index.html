@@ -63,7 +63,7 @@
 			    })
 			    .on('slidestop', function(e) {
 			        puredom(this).declassify('changing');
-		        });
+			    });
 			
 			// buttons
 			puredom('.bpm-increment').addEvent('click', function(e){
@@ -129,7 +129,13 @@
 			// BPM increase/decrease
 			metronome.on('bpmChange', function(bpm) {
 				puredom('.bpm-display').text(bpm);
-				flash_length = Math.min(100, (60 / bpm * 1000) * .25);
+				
+				// flash_length is just a nice visual effect that makes
+				// the beat light flash for a duration dependant on the
+				// length of the beat itself.
+				//
+				// = milliseconds per beat / 4, to a max of 100ms.
+				flash_length = Math.min(100, (60 / bpm * 1000) * .1);
 			});
 			
 			// time signature change
@@ -162,8 +168,9 @@
 			});
 			
 			metronome.on('fullBeat', function(beats, beat, measure){
+				puredom('.beat-counter').declassify('light');
 				puredom('.beat-' + beat)
-					.classify('light flash')
+					.classify('light', 'flash')
 					.wait(flash_length, function(){
 						this.declassify('flash');
 					});

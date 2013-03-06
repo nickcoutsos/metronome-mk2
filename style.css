@@ -57,18 +57,6 @@ body {
 	border: 5px solid rgba(127, 127, 127, 0.25);
 }
 
-.light {
-	background: #F00;
-	background: -webkit-radial-gradient(50%, circle, #F22 25%, #F00 95%);
-	box-shadow: 0px 0px 30px 0px rgba(255, 0, 0, 0.7);
-}
-
-.flash {
-	background: #FA7;
-	background: -webkit-radial-gradient(50%, circle, #FD4 25%, #FA0 95%);
-	box-shadow: 0px 0px 50px 0px rgba(255, 200, 0, 0.7);
-}
-
 .beat-counters {
 	text-align: center;
 	width: 100%;
@@ -82,8 +70,21 @@ body {
 	border: 0px solid rgba(127, 127, 127, 0.25);
 	margin: 0px;
 	padding: 0px;
+	
+	background-color: #500;
 }
 
+.light {
+	background: #F00;
+	background: -webkit-radial-gradient(50%, circle, #F22 25%, #F00 95%);
+	box-shadow: 0px 0px 30px 0px rgba(255, 0, 0, 0.7);
+}
+
+.flash {
+	background: #FA7;
+	background: -webkit-radial-gradient(50%, circle, #FD4 25%, #FA0 95%);
+	box-shadow: 0px 0px 50px 0px rgba(255, 200, 0, 0.7);
+}
 
 .controls {
 	float: right;
