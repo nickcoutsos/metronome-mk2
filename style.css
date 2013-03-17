@@ -38,29 +38,48 @@ body {
 	background-color: #222;
 	overflow: visible;
 	margin: 0px auto;
-	/*
-	-webkit-transform-origin: 320px 0px;
-	-webkit-transform: scale(1.70);
-	*/
+	padding: 10px;
 }
 
-.beat {
+.settings {
 	width: 200px;
-	height: 200px;
+	height: 170px;
 	
 	color: white;
 	font-family: courier;
 	font-size: 22px;
 	
-	margin: 10px;
+	margin: 0px;
+	padding: 5px 10px;
 	
 	border: 5px solid rgba(127, 127, 127, 0.25);
+}
+
+.settings fieldset {
+	font-size: 12px;
+	/*padding: 0px;
+	
+	border: 0px;*/
+}
+.settings label {
+}
+
+.button {
+	background-color: #555;
+	border: 3px solid #777;
+	border-radius: 8px;
+	text-align: center;
+}
+
+.toggle {
+	margin: 10px;
 }
 
 .beat-counters {
 	text-align: center;
 	width: 100%;
-	margin: 10px;
+	margin-top: 10px;
+	float: left;
 }
 
 .beat-counter {
@@ -76,33 +95,50 @@ body {
 
 .light {
 	background: #F00;
+}
+.flash {
+	background: #FA7;
+}
+
+.fancy .light {
 	background: -webkit-radial-gradient(50%, circle, #F22 25%, #F00 95%);
 	box-shadow: 0px 0px 30px 0px rgba(255, 0, 0, 0.7);
 }
 
-.flash {
-	background: #FA7;
+.fancy .flash{
 	background: -webkit-radial-gradient(50%, circle, #FD4 25%, #FA0 95%);
 	box-shadow: 0px 0px 50px 0px rgba(255, 200, 0, 0.7);
 }
 
-.controls {
+.bpm {
 	float: right;
 	position: relative;
 	width: 390px;
-	height: 200px;
+	height: 180px;
 	
 	margin: 0px;
-	font-family: courier;
-	font-weight: bold;
+	font-family: 'Audiowide';
+	font-style: normal;
+	/*font-weight: bold;*/
+	background: #800;
+	color: #F50;
 	border: 5px solid rgba(127, 127, 127, 0.25);
+}
+
+.fancy .bpm {
+	/*text-shadow: 0px 0px 25px rgba(255, 0, 0, 0.7);*/
+}
+
+.changing {
+	color: #FD0;
+	text-shadow: 0px 0px 25px rgba(255, 255, 0, 0.5);
 }
 
 .bpm-decrement, .bpm-increment, .bpm-display {
 	float: left;
 	
-	height: 200px;
-	line-height: 200px;
+	height: 180px;
+	line-height: 180px;
 	text-align: center;
 	
 	margin: 0px;
@@ -110,29 +146,31 @@ body {
 }
 
 .bpm-decrement, .bpm-increment {
-	background: #ccc;
-	width: 40px;
-	font-size: 36px;
-}
-
-.bpm-display {
-	background: #ddd;
-	width: 310px;
+	position: absolute;
+	top: 60px;
+	width: 60px;
+	height: 60px;
 	
-	font-size: 72px;
-}
-
-.bpm-display.changing {
-    color: #476685;
-}
-
-.bpm-display:before {
-	content: "♩=";
+	line-height: 60px;
+	
+	color: #D30;
+	background-color: rgba(125, 0, 0, 0.5);
+	border: 3px solid #D30;
+	border-radius: 34px;
 	font-size: 36px;
-	color: #333;
+}
+.bpm-display {
+	width: 100%;
+	font-size: 72px;
 }
 .bpm-display:after {
 	content: "bpm";
-	font-size: 36px;
-	color: #333;
+	font-size: 24px;
+	color: #D30;
+}
+.bpm-decrement {
+	left: 10px;
+}
+.bpm-increment {
+	right: 10px;
 }

@@ -54,13 +54,28 @@ puredom.extend(Metronome.prototype, {
         this.bpm = bpm;
         
         this.fireEvent('bpmChange', [this.bpm]);
+        if  (this._interval) {
+            clearInterval(this._interval);
+        }
+        
         if (this.running()) {
-            this.reset();
+            this._set_beat_interval();
         }
     },
     
     running: function() {
         return this._interval != null;
+    },
+    
+    _set_beat_interval: function() {
+        var that = this,
+            delay = this.seconds_per_beat() * 500;
+        
+        if (this._interval) {
+            clearInterval(this._interval);
+        }
+        
+        this._interval = setInterval(function(){that._beat();}, delay);
     },
     
     _beat: function() {
@@ -102,7 +117,7 @@ puredom.extend(Metronome.prototype, {
         this._beats = 0;
         this._measures = 0;
         var that = this;
-        this._interval = setInterval(function(){that._beat();}, this.seconds_per_beat() * 500);
+        this._set_beat_interval();
         this.fireEvent('start');
     },
     

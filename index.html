@@ -4,21 +4,36 @@
 		<meta charset="utf-8">
 		<meta name="description" content="Bringin' the beats to the browsers.">
 		<title>Metronome</title>
+		<link href='http://fonts.googleapis.com/css?family=VT323|Julius+Sans+One|Audiowide|Geo' rel='stylesheet' type='text/css'>
 		<link rel="stylesheet" href="style.css" />
 		<script src="puredom.light.js"></script>
 		<script type="text/Javascript" src="metronome.js"></script>
 		<script type="text/Javascript" src="touchslide-puredom.js"></script>
+		<script type="text/javascript" src="puredom.mousehold.js"></script>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	</head>
 	<body>
 		<div id="content">
-			<div class="metronome">
-				<div class="controls">
+			<div class="metronome fancy">
+				<div class="bpm">
 					<div class="button bpm-decrement">-</div>
 					<div class="bpm-display">0</div>
 					<div class="button bpm-increment">+</div>
 				</div>
-				<div class="beat">Additional settings pending further planning and development. Please stay tuned.</div>
+				<div class="settings">
+					<form>
+						<fieldset>
+							<legend>Beats Per Measure</legend>
+							<label for="beats">beats</label> <input name="beats" type="number" value="4" min="0" max="8" />
+						</fieldset>
+						<fieldset>
+							<legend>Auto-increment bpm</legend>
+							<label for="measures">Every <input name="measures" type="number" min="0" max="10" value="2" /> measures,</label>
+							<label for="bpm">increase bpm by <input name="bpm" type="number" min="0" max="10" value="2" />.</label>
+						</fieldset>
+						<div class="button toggle">Start/Stop</div>
+					</form>
+				</div>
 				<div class="beat-counters">
 					<div class="beat-counter beat-1 "></div>
 					<div class="beat-counter beat-2"></div>
@@ -27,27 +42,39 @@
 				</div>
 			</div>
 		</div>
+		<audio id="down" src="down.wav"></audio>
+		<audio id="up" src="up.wav"></audio>
 	</body>
 	
 	<script type="text/Javascript">
 		metronome = {};
 		puredom(function(){
-			var flash_length = 100;
-			var start_bpm;
-			var sfx = {
-				down_beat: new Audio(),
-				up_beat: new Audio()
-			};
-			
-			sfx.down_beat.src = "down.wav";
-			sfx.up_beat.src = "up.wav";
+			var flash_length = 100,
+				start_bpm,
+				tick = puredom('#down')._nodes[0],
+				last_bpm_change;
 			
 			metronome = new Metronome();
 			
 			// Input handlers
 			puredom('.meter').addEvent('click', function(){metronome.toggle()});
-			puredom('.beat').on('click', function() {metronome.toggle();});
+			puredom('.toggle').on('click', function() {metronome.toggle();});
 			
+			puredom('.settings input[name="beats"]').on('change', function(e) {
+				metronome.set_meter(puredom(this).value());
+			});
+			
+			function bpm_change() {
+				this.last_bpm_change = this.last_bpm_change || null;
+				puredom('.bpm-display').classify('changing');
+				
+				if (this.last_bpm_change) {
+					clearTimeout(this.last_bpm_change);
+				}
+				this.last_bpm_change = setTimeout(function() {
+					puredom('.changing').declassify('changing');
+				}, 400);
+			}
 			//
 			// BPM Changers
 			//
@@ -56,33 +83,24 @@
 			puredom('.bpm-display').touchslide(0.85, 10)
 			    .on('slidestart', function(e) { 
 			        start_bpm = metronome.bpm;
-			        puredom(this).classify('changing');
 			    })
 			    .on('sliding', function(e) {
 			        metronome.set_bpm(Math.round(start_bpm + e.sourceOffsetX));
-			    })
-			    .on('slidestop', function(e) {
-			        puredom(this).declassify('changing');
 			    });
 			
 			// buttons
-			puredom('.bpm-increment').addEvent('click', function(e){
-			    metronome.increment()
-			    puredom('.bpm-display')
-			        .classify('changing')
-                    .wait(200, function(){puredom('.bpm-display').declassify('changing')});
-                
-                return e.cancel();
-		    });
-			puredom('.bpm-decrement').addEvent('click', function(e){
-			    metronome.decrement()
-			    puredom('.bpm-display')
-			        .classify('changing')
-                    .wait(200, function(){puredom('.bpm-display').declassify('changing')});
-                
-                return e.cancel();
-            });
-            
+			puredom('.bpm-increment')
+				.mousehold({interval: 0.15})
+				.on('mousedown', function(e) {e.preventDefault();})
+				.on('mouseheld', function(e) {metronome.increment();})
+				.on('mouseup', function(e) {metronome.increment();});
+			
+			puredom('.bpm-decrement')
+				.mousehold({interval: 0.15})
+				.on('mousedown', function(e) {e.preventDefault();})
+				.on('mouseheld', function(e) {metronome.decrement();})
+				.on('mouseup', function(e) {metronome.decrement();});
+			
             // keyboard arrows
 			puredom(document).on('keyDown', function(e){
 				var amount = 1;
@@ -128,6 +146,7 @@
 			
 			// BPM increase/decrease
 			metronome.on('bpmChange', function(bpm) {
+				bpm_change();
 				puredom('.bpm-display').text(bpm);
 				
 				// flash_length is just a nice visual effect that makes
@@ -152,7 +171,7 @@
 				
 				// calculate widths
 				var available = puredom('.beat-counters').width();
-				var margins = 10 * (beats_per_measure);
+				var margins = 10 * (beats_per_measure -1);
 				var counter = (available - margins) / beats_per_measure;
 				
 				puredom('.beat-counter').css({
@@ -176,20 +195,33 @@
 					});
 				
 				if (beat == 1) {
-					sfx.down_beat.currentTime = 0.0885;
-					sfx.down_beat.play();
+					//sfx.down_beat.currentTime = 0.0885;
+					//sfx.down_beat.play();
+					tick.volume = 1.0;
+					tick.currentTime = 0.0885;
+					tick.play();
 				}
 				else {
-					sfx.up_beat.currentTime = 0.0705;
-					sfx.up_beat.play();
+					//sfx.up_beat.currentTime = 0.0705;
+					//sfx.up_beat.play();
+					tick.volume = 0.4;
+					tick.currentTime = 0.0885;
+					tick.play();
 				}
 			});
 			
 			metronome.on('measure', function(measure) {
 				puredom('.beat-counter').declassify('light');
-				if ((measure - 1) % 2 == 0) {
-					metronome.increment(10);
-					return false;
+				var after = puredom('.settings input[name="measures"]').value(),
+					increase = puredom('.settings input[name="bpm"]').value();
+				
+				if (!after || !increase) {
+					return;
+				}
+				
+				if ((measure - 1) % parseInt(after) == 0) {
+					metronome.increment(parseInt(increase));
+					//return false;
 				}
 			});
 			
