@@ -16,23 +16,21 @@
 		<div id="content">
 			<div class="metronome fancy">
 				<div class="bpm">
-					<div class="button bpm-decrement">-</div>
+					<div class="bpm-decrement">-</div>
 					<div class="bpm-display">0</div>
-					<div class="button bpm-increment">+</div>
+					<div class="bpm-increment">+</div>
 				</div>
-				<div class="settings">
-					<form>
-						<fieldset>
-							<legend>Beats Per Measure</legend>
-							<label for="beats">beats</label> <input name="beats" type="number" value="4" min="0" max="8" />
-						</fieldset>
-						<fieldset>
-							<legend>Auto-increment bpm</legend>
-							<label for="measures">Every <input name="measures" type="number" min="0" max="10" value="2" /> measures,</label>
-							<label for="bpm">increase bpm by <input name="bpm" type="number" min="0" max="10" value="2" />.</label>
-						</fieldset>
-						<div class="button toggle">Start/Stop</div>
-					</form>
+				<div class="controls">
+					<div class="options">
+						<form>
+							<input name="speedup" type="checkbox" checked="checked" />
+							<label for="speedup">Auto-speedup</label><br/>
+							
+							<input name="fancy" type="checkbox" checked="" />
+							<label for="fancy">Glow effects</label>
+						</form>
+					</div>
+					<div class="toggle">start/stop</div>
 				</div>
 				<div class="beat-counters">
 					<div class="beat-counter beat-1 "></div>
@@ -48,6 +46,7 @@
 	
 	<script type="text/Javascript">
 		metronome = {};
+		
 		puredom(function(){
 			var flash_length = 100,
 				start_bpm,
@@ -55,14 +54,19 @@
 				last_bpm_change;
 			
 			metronome = new Metronome();
+			metronome.options = {
+				beatsPerMeasure: 4,
+				autoSpeedup: {
+					enabled: true,
+					increase: 2,
+					measures: 4
+				}
+			};
 			
 			// Input handlers
 			puredom('.meter').addEvent('click', function(){metronome.toggle()});
 			puredom('.toggle').on('click', function() {metronome.toggle();});
 			
-			puredom('.settings input[name="beats"]').on('change', function(e) {
-				metronome.set_meter(puredom(this).value());
-			});
 			
 			function bpm_change() {
 				this.last_bpm_change = this.last_bpm_change || null;
@@ -75,6 +79,21 @@
 					puredom('.changing').declassify('changing');
 				}, 400);
 			}
+			
+			puredom('.options input[name="speedup"]').on('change', function(e) {
+				metronome.options.autoSpeedup.enabled = puredom(this)._nodes[0].checked;
+			});
+			puredom('.options input[name="fancy"]').on('change', function(e) {
+				var checked = puredom(this)._nodes[0].checked;
+				
+				if (checked) {
+					puredom('.metronome').classify('fancy');
+				}
+				else {
+					puredom('.metronome').declassify('fancy');
+				}
+			});
+			
 			//
 			// BPM Changers
 			//
@@ -195,32 +214,24 @@
 					});
 				
 				if (beat == 1) {
-					//sfx.down_beat.currentTime = 0.0885;
-					//sfx.down_beat.play();
 					tick.volume = 1.0;
-					tick.currentTime = 0.0885;
-					tick.play();
 				}
 				else {
-					//sfx.up_beat.currentTime = 0.0705;
-					//sfx.up_beat.play();
 					tick.volume = 0.4;
-					tick.currentTime = 0.0885;
-					tick.play();
 				}
+				tick.currentTime = 0.0885;
+				tick.play();
 			});
 			
 			metronome.on('measure', function(measure) {
 				puredom('.beat-counter').declassify('light');
-				var after = puredom('.settings input[name="measures"]').value(),
-					increase = puredom('.settings input[name="bpm"]').value();
-				
-				if (!after || !increase) {
+				var options = metronome.options.autoSpeedup;
+				if (!options.enabled) {
 					return;
 				}
 				
-				if ((measure - 1) % parseInt(after) == 0) {
-					metronome.increment(parseInt(increase));
+				if ((measure - 1) % options.measures == 0) {
+					metronome.increment(parseInt(options.increase));
 					//return false;
 				}
 			});
