@@ -16,11 +16,13 @@
 		<div id="content">
 			<div class="metronome fancy">
 				<div class="bpm">
-					<div class="bpm-decrement">-</div>
-					<div class="bpm-display">0</div>
-					<div class="bpm-increment">+</div>
+					<div class="button decrement">-</div>
+					<div class="display">0</div>
+					<div class="button increment">+</div>
+					<div class="toggle">start</div>
 				</div>
 				<div class="controls">
+					<h2>Options</h2>
 					<div class="options">
 						<form>
 							<input name="speedup" type="checkbox" checked="checked" />
@@ -30,7 +32,6 @@
 							<label for="fancy">Glow effects</label>
 						</form>
 					</div>
-					<div class="toggle">start/stop</div>
 				</div>
 				<div class="beat-counters">
 					<div class="beat-counter beat-1 "></div>
@@ -66,20 +67,6 @@
 			// Input handlers
 			puredom('.meter').addEvent('click', function(){metronome.toggle()});
 			puredom('.toggle').on('click', function() {metronome.toggle();});
-			
-			
-			function bpm_change() {
-				this.last_bpm_change = this.last_bpm_change || null;
-				puredom('.bpm-display').classify('changing');
-				
-				if (this.last_bpm_change) {
-					clearTimeout(this.last_bpm_change);
-				}
-				this.last_bpm_change = setTimeout(function() {
-					puredom('.changing').declassify('changing');
-				}, 400);
-			}
-			
 			puredom('.options input[name="speedup"]').on('change', function(e) {
 				metronome.options.autoSpeedup.enabled = puredom(this)._nodes[0].checked;
 			});
@@ -99,7 +86,7 @@
 			//
 			
 			// touch sliding
-			puredom('.bpm-display').touchslide(0.85, 10)
+			puredom('.bpm .display').touchslide(0.85, 10)
 			    .on('slidestart', function(e) { 
 			        start_bpm = metronome.bpm;
 			    })
@@ -108,19 +95,27 @@
 			    });
 			
 			// buttons
-			puredom('.bpm-increment')
-				.mousehold({interval: 0.15})
-				.on('mousedown', function(e) {e.preventDefault();})
-				.on('mouseheld', function(e) {metronome.increment();})
-				.on('mouseup', function(e) {metronome.increment();});
+			var mousehold_options = {
+				delay: 0.5,
+				interval: 0.15,
+				eventName: 'mouseholding',
+				preventDefault: true,
+				fireImmediately: true
+			};
 			
-			puredom('.bpm-decrement')
-				.mousehold({interval: 0.15})
-				.on('mousedown', function(e) {e.preventDefault();})
-				.on('mouseheld', function(e) {metronome.decrement();})
-				.on('mouseup', function(e) {metronome.decrement();});
+			puredom('.bpm .increment')
+				.mousehold(mousehold_options)
+				.on('mouseholding', function() {metronome.increment();})
+				.on('mousedown', function() {puredom(this).classify('active');})
+				.on('mouseup', function() {puredom(this).declassify('active');});
 			
-            // keyboard arrows
+			puredom('.bpm .decrement')
+				.mousehold(mousehold_options)
+				.on('mouseholding', function() {metronome.decrement();})
+				.on('mousedown', function() {puredom(this).classify('active');})
+				.on('mouseup', function() {puredom(this).declassify('active');});
+			
+			// keyboard arrows
 			puredom(document).on('keyDown', function(e){
 				var amount = 1;
 				if (e.shiftKey) {
@@ -129,15 +124,25 @@
 				
 				if (e.keyCode == 187 || e.keyCode == 39) {
 					metronome.increment(amount);
+					puredom('.bpm .increment').classify('active');
 				} else if (e.keyCode == 189 || e.keyCode == 37) {
 					metronome.decrement(amount);
+					puredom('.bpm .decrement').classify('active');
 				} else if (e.keyCode == 32) {
 					metronome.toggle();
 				}
 			});
+			puredom(document).on('keyUp', function(e) {
+				if (e.keyCode == 187 || e.keyCode == 39) {
+					puredom('.bpm .increment').declassify('active');
+				}
+				else if (e.keyCode == 189 || e.keyCode == 37) {
+					puredom('.bpm .decrement').declassify('active');
+				}
+			});
 			
 			// scrolling
-			puredom('.controls').on('mousewheel', function(e) {
+			puredom('.bpm .display').on('mousewheel', function(e) {
 				var amount = 1;
 				if (e.shiftKey) {
 					amount = 10;
@@ -158,15 +163,28 @@
 			
 			// start
 			metronome.on('start', function() {
+				puredom('.bpm .toggle').text('stop');
 				puredom('.beat, .beat-counter')
 					.declassify('light')
 					.declassify('flash');
+			})
+			metronome.on('stop', function() {
+				puredom('.bpm .toggle').text('start');
 			});
 			
 			// BPM increase/decrease
 			metronome.on('bpmChange', function(bpm) {
-				bpm_change();
-				puredom('.bpm-display').text(bpm);
+				this.last_bpm_change = this.last_bpm_change || null;
+				puredom('.bpm .display').classify('changing');
+				
+				if (this.last_bpm_change) {
+					clearTimeout(this.last_bpm_change);
+				}
+				this.last_bpm_change = setTimeout(function() {
+					puredom('.changing').declassify('changing');
+				}, 400);
+				
+				puredom('.bpm .display').text(bpm);
 				
 				// flash_length is just a nice visual effect that makes
 				// the beat light flash for a duration dependant on the
@@ -232,7 +250,6 @@
 				
 				if ((measure - 1) % options.measures == 0) {
 					metronome.increment(parseInt(options.increase));
-					//return false;
 				}
 			});
 			
