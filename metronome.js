@@ -38,7 +38,10 @@ puredom.extend(Metronome.prototype, {
         
         this.beats_per_measure = beats_per_measure;
         this.fireEvent('meterChange', [this.beats_per_measure]);
-        this.reset();
+        
+        if (this.running()) {
+            this.reset();
+        }
     },
     
     set_bpm: function(bpm) {

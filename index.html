@@ -8,8 +8,9 @@
 		<link rel="stylesheet" href="style.css" />
 		<script src="puredom.light.js"></script>
 		<script type="text/Javascript" src="metronome.js"></script>
-		<script type="text/Javascript" src="touchslide-puredom.js"></script>
 		<script type="text/javascript" src="puredom.mousehold.js"></script>
+		<script type="text/javascript" src="puredom.momentouch.js"></script>
+		
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	</head>
 	<body>
@@ -25,11 +26,14 @@
 					<h2>Options</h2>
 					<div class="options">
 						<form>
-							<input name="speedup" type="checkbox" checked="checked" />
+							<input name="halfbeat" type="checkbox" checked="true" />
+							<label for="halfbeat">Show half beats</label><br/>
+							
+							<input name="speedup" type="checkbox" checked="true"/>
 							<label for="speedup">Auto-speedup</label><br/>
 							
-							<input name="fancy" type="checkbox" checked="" />
-							<label for="fancy">Glow effects</label>
+							<input name="fancy" type="checkbox" checked="true"/>
+							<label for="fancy">Glow effects</label><br/>
 						</form>
 					</div>
 				</div>
@@ -61,6 +65,9 @@
 					enabled: true,
 					increase: 2,
 					measures: 4
+				},
+				halfBeats: {
+					enabled: true
 				}
 			};
 			
@@ -80,18 +87,21 @@
 					puredom('.metronome').declassify('fancy');
 				}
 			});
-			
+			puredom('.options input[name="halfbeat"]').on('change', function(e) {
+				metronome.options.halfBeats.enabled = puredom(this)._nodes[0].checked
+			})
 			//
 			// BPM Changers
 			//
 			
 			// touch sliding
-			puredom('.bpm .display').touchslide(0.85, 10)
+			puredom('.bpm .display')
+				.momentouch({dragFactor: 0.9})
 			    .on('slidestart', function(e) { 
 			        start_bpm = metronome.bpm;
 			    })
 			    .on('sliding', function(e) {
-			        metronome.set_bpm(Math.round(start_bpm + e.sourceOffsetX));
+			        metronome.set_bpm(Math.round(start_bpm + e.sourceOffsetX * 0.3));
 			    });
 			
 			// buttons
@@ -164,12 +174,11 @@
 			// start
 			metronome.on('start', function() {
 				puredom('.bpm .toggle').text('stop');
-				puredom('.beat, .beat-counter')
-					.declassify('light')
-					.declassify('flash');
+				puredom('.beat, .beat-counter').declassify('light', 'flash', 'dim');
 			})
 			metronome.on('stop', function() {
 				puredom('.bpm .toggle').text('start');
+				puredom('.beat, .beat-counter').declassify('light', 'flash', 'dim');
 			});
 			
 			// BPM increase/decrease
@@ -224,7 +233,7 @@
 			});
 			
 			metronome.on('fullBeat', function(beats, beat, measure){
-				puredom('.beat-counter').declassify('light');
+				puredom('.beat-counter').declassify('light', 'flash', 'dim');
 				puredom('.beat-' + beat)
 					.classify('light', 'flash')
 					.wait(flash_length, function(){
@@ -239,6 +248,12 @@
 				}
 				tick.currentTime = 0.0885;
 				tick.play();
+			}).on('halfBeat', function(even) {
+				if (!metronome.options.halfBeats.enabled) {
+					return;
+				}
+				
+				puredom('.beat-counter.light').classify('dim');
 			});
 			
 			metronome.on('measure', function(measure) {

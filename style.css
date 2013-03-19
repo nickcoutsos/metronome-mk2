@@ -66,6 +66,10 @@ body {
 .flash {
 	background: #FA7;
 }
+.dim {
+	background: #A00 !important;
+	box-shadow: none !important;
+}
 
 .fancy .light {
 	background: -webkit-radial-gradient(50%, circle, #F22 25%, #F00 95%);
@@ -86,14 +90,14 @@ body {
 	margin: 0px;
 	font-family: 'Audiowide';
 	font-style: normal;
-	/*font-weight: bold;*/
-	/*background: #800;*/
-	background: -webkit-linear-gradient(bottom, #810, #800 60%, #600);
+	
+	background: #800;
 	color: #F50;
 	border: 5px solid #500;
 }
 
 .fancy .bpm {
+	background: -webkit-linear-gradient(bottom, #810, #800 60%, #600);
 	/*text-shadow: 0px 0px 25px rgba(255, 0, 0, 0.7);*/
 }
 
