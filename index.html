@@ -1,0 +1,277 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="description" content="Bringin' the beats to the browsers.">
+		<title>Metronome</title>
+		<link href='http://fonts.googleapis.com/css?family=VT323|Julius+Sans+One|Audiowide|Geo' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="style.css" />
+		<script src="puredom.light.js"></script>
+		<script type="text/Javascript" src="metronome.js"></script>
+		<script type="text/javascript" src="puredom.mousehold.js"></script>
+		<script type="text/javascript" src="puredom.momentouch.js"></script>
+		
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	</head>
+	<body>
+		<div id="content">
+			<div class="metronome fancy">
+				<div class="bpm">
+					<div class="button decrement">-</div>
+					<div class="display">0</div>
+					<div class="button increment">+</div>
+					<div class="toggle">start</div>
+				</div>
+				<div class="controls">
+					<h2>Options</h2>
+					<div class="options">
+						<form>
+							<input name="halfbeat" type="checkbox" checked="true" />
+							<label for="halfbeat">Show half beats</label><br/>
+							
+							<input name="speedup" type="checkbox" checked="true"/>
+							<label for="speedup">Auto-speedup</label><br/>
+							
+							<input name="fancy" type="checkbox" checked="true"/>
+							<label for="fancy">Glow effects</label><br/>
+						</form>
+					</div>
+				</div>
+				<div class="beat-counters">
+					<div class="beat-counter beat-1 "></div>
+					<div class="beat-counter beat-2"></div>
+					<div class="beat-counter beat-3"></div>
+					<div class="beat-counter beat-4"></div>
+				</div>
+			</div>
+		</div>
+		<audio id="down" src="down.wav"></audio>
+		<audio id="up" src="up.wav"></audio>
+	</body>
+	
+	<script type="text/Javascript">
+		metronome = {};
+		
+		puredom(function(){
+			var flash_length = 100,
+				start_bpm,
+				tick = puredom('#down')._nodes[0],
+				last_bpm_change;
+			
+			metronome = new Metronome();
+			metronome.options = {
+				beatsPerMeasure: 4,
+				autoSpeedup: {
+					enabled: true,
+					increase: 2,
+					measures: 4
+				},
+				halfBeats: {
+					enabled: true
+				}
+			};
+			
+			// Input handlers
+			puredom('.meter').addEvent('click', function(){metronome.toggle()});
+			puredom('.toggle').on('click', function() {metronome.toggle();});
+			puredom('.options input[name="speedup"]').on('change', function(e) {
+				metronome.options.autoSpeedup.enabled = puredom(this)._nodes[0].checked;
+			});
+			puredom('.options input[name="fancy"]').on('change', function(e) {
+				var checked = puredom(this)._nodes[0].checked;
+				
+				if (checked) {
+					puredom('.metronome').classify('fancy');
+				}
+				else {
+					puredom('.metronome').declassify('fancy');
+				}
+			});
+			puredom('.options input[name="halfbeat"]').on('change', function(e) {
+				metronome.options.halfBeats.enabled = puredom(this)._nodes[0].checked
+			})
+			//
+			// BPM Changers
+			//
+			
+			// touch sliding
+			puredom('.bpm .display')
+				.momentouch({dragFactor: 0.9})
+			    .on('slidestart', function(e) { 
+			        start_bpm = metronome.bpm;
+			    })
+			    .on('sliding', function(e) {
+			        metronome.set_bpm(Math.round(start_bpm + e.sourceOffsetX * 0.3));
+			    });
+			
+			// buttons
+			var mousehold_options = {
+				delay: 0.5,
+				interval: 0.15,
+				eventName: 'mouseholding',
+				preventDefault: true,
+				fireImmediately: true
+			};
+			
+			puredom('.bpm .increment')
+				.mousehold(mousehold_options)
+				.on('mouseholding', function() {metronome.increment();})
+				.on('mousedown', function() {puredom(this).classify('active');})
+				.on('mouseup', function() {puredom(this).declassify('active');});
+			
+			puredom('.bpm .decrement')
+				.mousehold(mousehold_options)
+				.on('mouseholding', function() {metronome.decrement();})
+				.on('mousedown', function() {puredom(this).classify('active');})
+				.on('mouseup', function() {puredom(this).declassify('active');});
+			
+			// keyboard arrows
+			puredom(document).on('keyDown', function(e){
+				var amount = 1;
+				if (e.shiftKey) {
+					amount = 10;
+				}
+				
+				if (e.keyCode == 187 || e.keyCode == 39) {
+					metronome.increment(amount);
+					puredom('.bpm .increment').classify('active');
+				} else if (e.keyCode == 189 || e.keyCode == 37) {
+					metronome.decrement(amount);
+					puredom('.bpm .decrement').classify('active');
+				} else if (e.keyCode == 32) {
+					metronome.toggle();
+				}
+			});
+			puredom(document).on('keyUp', function(e) {
+				if (e.keyCode == 187 || e.keyCode == 39) {
+					puredom('.bpm .increment').declassify('active');
+				}
+				else if (e.keyCode == 189 || e.keyCode == 37) {
+					puredom('.bpm .decrement').declassify('active');
+				}
+			});
+			
+			// scrolling
+			puredom('.bpm .display').on('mousewheel', function(e) {
+				var amount = 1;
+				if (e.shiftKey) {
+					amount = 10;
+				}
+				if (Math.abs(e.wheelDeltaY) > Math.abs(e.wheelDeltaX)){ 
+					if (e.wheelDeltaY > 0) {
+						metronome.increment(amount);
+					}
+					else {
+						metronome.decrement(amount);
+					}
+				}
+			});
+			
+			//
+			// Event handlers
+			//
+			
+			// start
+			metronome.on('start', function() {
+				puredom('.bpm .toggle').text('stop');
+				puredom('.beat, .beat-counter').declassify('light', 'flash', 'dim');
+			})
+			metronome.on('stop', function() {
+				puredom('.bpm .toggle').text('start');
+				puredom('.beat, .beat-counter').declassify('light', 'flash', 'dim');
+			});
+			
+			// BPM increase/decrease
+			metronome.on('bpmChange', function(bpm) {
+				this.last_bpm_change = this.last_bpm_change || null;
+				puredom('.bpm .display').classify('changing');
+				
+				if (this.last_bpm_change) {
+					clearTimeout(this.last_bpm_change);
+				}
+				this.last_bpm_change = setTimeout(function() {
+					puredom('.changing').declassify('changing');
+				}, 400);
+				
+				puredom('.bpm .display').text(bpm);
+				
+				// flash_length is just a nice visual effect that makes
+				// the beat light flash for a duration dependant on the
+				// length of the beat itself.
+				//
+				// = milliseconds per beat / 4, to a max of 100ms.
+				flash_length = Math.min(100, (60 / bpm * 1000) * .1);
+			});
+			
+			// time signature change
+			metronome.on('meterChange', function(beats_per_measure) {
+				
+				var counters = puredom('.beat-counters');
+				
+				counters.children().remove();
+				for (var i = 0; i < beats_per_measure; i++) {
+					var beat = document.createElement('div');
+					beat.className = 'beat-counter beat-' + (i+1) + ' ';
+					counters.appendChild(beat);
+				}
+				
+				// calculate widths
+				var available = puredom('.beat-counters').width();
+				var margins = 10 * (beats_per_measure -1);
+				var counter = (available - margins) / beats_per_measure;
+				
+				puredom('.beat-counter').css({
+					'width': counter + 'px',
+					'margin': '0px 5px'
+				});
+				puredom('.beat-counter:first-child').css({
+					'margin-left': '0px'
+				});
+				puredom('.beat-counter:last-child').css({
+					'margin-right': '0px'
+				})
+			});
+			
+			metronome.on('fullBeat', function(beats, beat, measure){
+				puredom('.beat-counter').declassify('light', 'flash', 'dim');
+				puredom('.beat-' + beat)
+					.classify('light', 'flash')
+					.wait(flash_length, function(){
+						this.declassify('flash');
+					});
+				
+				if (beat == 1) {
+					tick.volume = 1.0;
+				}
+				else {
+					tick.volume = 0.4;
+				}
+				tick.currentTime = 0.0885;
+				tick.play();
+			}).on('halfBeat', function(even) {
+				if (!metronome.options.halfBeats.enabled) {
+					return;
+				}
+				
+				puredom('.beat-counter.light').classify('dim');
+			});
+			
+			metronome.on('measure', function(measure) {
+				puredom('.beat-counter').declassify('light');
+				var options = metronome.options.autoSpeedup;
+				if (!options.enabled) {
+					return;
+				}
+				
+				if ((measure - 1) % options.measures == 0) {
+					metronome.increment(parseInt(options.increase));
+				}
+			});
+			
+			metronome.init();
+			metronome.set_bpm(80);
+			metronome.set_meter(4);
+			metronome._fireEvent('meterChange', 4);
+		});
+	</script>
+</html>
